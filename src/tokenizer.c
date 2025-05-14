@@ -3,21 +3,24 @@
 
 #include <ctype.h>
 
-
+/**
+ * Initializes the tokenizer
+ */
 void tokenizer_init(Tokenizer *tokenizer, const char *filename) {
-    if (tokenizer->fptr != NULL) {
-        tokenizer_cleanup(tokenizer);
-    }
-    
+    // Open the file and hold to allow streaming
     tokenizer->fptr = fopen(filename, "r");
     if (tokenizer->fptr == NULL) {
         error("Could not open file");
     }
 
+    // Read the first character
     tokenizer->current = fgetc(tokenizer->fptr);
 }
 
 
+/**
+ * Cleans up the tokenizer and closes the file
+ */
 void tokenizer_cleanup(Tokenizer *tokenizer) {
     fclose(tokenizer->fptr);
     tokenizer->fptr = NULL;
@@ -25,6 +28,9 @@ void tokenizer_cleanup(Tokenizer *tokenizer) {
 }
 
 
+/**
+ * Returns the current token and reads the next character from the file
+ */
 TokenType tokenizer_next(Tokenizer *tokenizer) {
     if (tokenizer->fptr == NULL) {
         return TOKEN_END_OF_FILE;
@@ -38,6 +44,9 @@ TokenType tokenizer_next(Tokenizer *tokenizer) {
 }
 
 
+/**
+ * Returns the current token without reading the next character from the file
+ */
 TokenType tokenizer_peek(Tokenizer *tokenizer) {
     switch (tokenizer->current) {
         case EOF:

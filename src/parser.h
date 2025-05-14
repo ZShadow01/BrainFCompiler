@@ -9,8 +9,6 @@ typedef struct {
     unsigned int _loops;
 } Parser;
 
-void ast_print(ASTNode *node);
-
 void parser_init(Parser *parser, const char *filename);
 ASTNode *parser_parse(Parser *parser);
 

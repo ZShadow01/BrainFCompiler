@@ -4,6 +4,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
+/**
+ * Writes a line of C code into the file according to the AST node type
+ */
 void write_code(FILE *fptr, ASTNode *node) {
     if (node == NULL) {
         return;
@@ -32,20 +36,29 @@ void write_code(FILE *fptr, ASTNode *node) {
 
         case AST_LOOP:
             fprintf(fptr, "    while (mem[ptr]) {\n");
+            
+            // Write the lines for the nodes within the loop
             write_code(fptr, node->children);
+            
             fprintf(fptr, "    }\n");
             break;
     }
 
+    // Write the next line of code
     write_code(fptr, node->next);
 }
 
+
+/**
+ * Generates a C file of the Brainf*ck program
+ */
 void generate_c_code(char *output_filename, ASTNode *tree) {
     FILE *fptr = fopen(output_filename, "w+");
     if (fptr == NULL) {
         error("Could not open output.c");
     }
 
+    // Setup the output.c file
     fprintf(fptr,
         "#include <stdio.h>\n"
         "#include <stdint.h>\n"
@@ -54,9 +67,12 @@ void generate_c_code(char *output_filename, ASTNode *tree) {
         "    int ptr = 0;\n"
     );
 
+    // Walk the AST and write a line of code for each node in the tree
     write_code(fptr, tree);
 
+    // Closing bracket
     fprintf(fptr, "}\n");
+
     fclose(fptr);
 }
 

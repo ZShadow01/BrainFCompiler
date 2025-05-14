@@ -3,22 +3,7 @@
 #include "errors.h"
 
 
-void ast_print(ASTNode *node) {
-    if (node == NULL) {
-        return;
-    }
-
-    printf("%dx %d\n", node->value, node->type);
-
-    ast_print(node->children);
-
-    ast_print(node->next);
-}
-
-
 void parser_init(Parser *parser, const char *filename) {
-    parser->tokenizer.fptr = NULL;
-
     tokenizer_init(&parser->tokenizer, filename);
     parser->_loops = 0;
 }
@@ -29,6 +14,7 @@ ASTNode *parser_parse(Parser *parser) {
 
     // Skip unnecessary information
     while ((current = tokenizer_next(&parser->tokenizer)) == TOKEN_UNKNOWN) {}
+
     if (current == TOKEN_END_OF_FILE) {
         if (parser->_loops > 0) {
             error("Unexpected EOF: missing closing ']'");
@@ -43,9 +29,11 @@ ASTNode *parser_parse(Parser *parser) {
         return NULL;
     }
 
+    // Create a new AST node
     ASTNode *node = ast_node_create();
     node->value = 1;
 
+    // Set the node type respectively and optimize repeating nodes
     switch (current) {
         case TOKEN_INCREMENT:
             node->type = AST_VALUE_CHANGE;
@@ -80,8 +68,11 @@ ASTNode *parser_parse(Parser *parser) {
             break;
 
         case TOKEN_LOOP_OPEN:
+            // Increment the loops member for every loop opened
             parser->_loops++;
             node->type = AST_LOOP;
+
+            // Every token until the corresponding closing loop character is parsed under node->children
             node->children = parser_parse(parser);
             break;
 
@@ -90,11 +81,15 @@ ASTNode *parser_parse(Parser *parser) {
             break;
     }
 
+    // Parse/generate the next node
     node->next = parser_parse(parser);
     return node;
 }
 
 
+/**
+ * Optimizes VALUE_CHANGE by summing up the amount of INCREMENT (1) and DECREMENT (-1) tokens back-to-back
+ */
 void parser_optimize_value(Parser *parser, ASTNode *node) {
     TokenType type = tokenizer_peek(&parser->tokenizer);
     
@@ -110,6 +105,9 @@ void parser_optimize_value(Parser *parser, ASTNode *node) {
 }
 
 
+/**
+ * Optimizes POINTER_MOVE by summing up the amount of MOVE_RIGHT (1) and MOVE_LEFT (-1) tokens back-to-back
+ */
 void parser_optimize_pointer(Parser *parser, ASTNode *node) {
     TokenType type = tokenizer_peek(&parser->tokenizer);
 
@@ -125,6 +123,9 @@ void parser_optimize_pointer(Parser *parser, ASTNode *node) {
 }
 
 
+/**
+ * Optimizes IO_INPUT by summing up the amount of repeating INPUT tokens back-to-back
+ */
 void parser_optimize_input(Parser *parser, ASTNode *node) {
     TokenType type = tokenizer_peek(&parser->tokenizer);
 
@@ -136,6 +137,9 @@ void parser_optimize_input(Parser *parser, ASTNode *node) {
 }
 
 
+/**
+ * Optimizes IO_OUTPUT by summing up the amount of repeating OUTPUT tokens back-to-back
+ */
 void parser_optimize_output(Parser *parser, ASTNode *node) {
     TokenType type = tokenizer_peek(&parser->tokenizer);
 
